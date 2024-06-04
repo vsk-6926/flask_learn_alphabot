@@ -1,0 +1,29 @@
+<h1>Hello World!!!</h1>
+
+<p>ahbfkjawf awhdwadi hawihd iwadhoioa wwd</p>
+<p>My name is {{ first_name }}</p>
+<p>{{ nofilter}}</p>
+<p>{{ safe_use|safe}}</p>
+<p>{{ safe_use|striptags}}</p>
+
+<br><br>
+<br><br>
+
+My favourite Pizzas - <br>
+{% for toppings in pizzas %}
+    {% if toppings == 31 %}
+        {{ toppings + 100}}<br>
+    {% else %}
+        {{ toppings }}<br>
+    {% endif %}
+{% endfor %}
+
+<br><br>
+<br><br>
+
+
+Directly fetching from list - 
+<br>
+{{ pizzas.1}}
+<br>
+{{ pizzas.3 + 10 }}
