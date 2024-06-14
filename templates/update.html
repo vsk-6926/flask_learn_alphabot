@@ -41,6 +41,12 @@
         {{ form.favorite_color.label(class="form-label") }}
         {{ form.favorite_color(class="form-control", value=name_to_update.favorite_color) }}
         <br>
+        {{ form.password_hash.label(class="form-label") }}
+        {{ form.password_hash(class="form-control") }}
+        <br>
+        {{ form.password_hash2.label(class="form-label") }}
+        {{ form.password_hash2(class="form-control") }}
+        <br>
         {{ form.submit(class="btn btn-secondary") }}
         
         <a href="{{ url_for('delete', id=id) }}" class="btn btn-danger">Delete</a>

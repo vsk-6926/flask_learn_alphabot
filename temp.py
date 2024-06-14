@@ -1,10 +1,11 @@
 from flask import Flask, render_template, flash, request # type: ignore
 from flask_wtf import FlaskForm # type: ignore
-from wtforms import StringField, SubmitField # type: ignore
-from wtforms.validators import DataRequired # type: ignore
+from wtforms import StringField, SubmitField, PasswordField, BooleanField, ValidationError # type: ignore
+from wtforms.validators import DataRequired, EqualTo, Length # type: ignore
 from flask_sqlalchemy import SQLAlchemy # type: ignore
 from flask_migrate import Migrate
 from datetime import datetime
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # Create a flask instance
 app = Flask(__name__)
@@ -39,6 +40,21 @@ class Users(db.Model):
     email = db.Column(db.String(200), nullable=False, unique=True)
     favorite_color = db.Column(db.String(120), nullable=False, unique=True)
     date_added = db.Column(db.DateTime, default=datetime.utcnow)
+    # Adding password
+    password_hash = db.Column(db.String(128))
+    
+    
+    @property
+    def password(self):
+        raise AttributeError("Password is not readable!!")
+    
+    @password.setter
+    def password(self, password):
+        self.password_hash = generate_password_hash(password)
+        
+    def verify_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
 
     # Create a String
     def __repr__(self):
@@ -49,6 +65,8 @@ class UserForm(FlaskForm):
     name = StringField("What's Your Name", validators=[DataRequired()])
     email = StringField("Email", validators=[DataRequired()])
     favorite_color = StringField("Favorite Color")
+    password_hash = PasswordField('Password', validators=[DataRequired(), EqualTo('password_hash2', message="Password must match!!")])
+    password_hash2 = PasswordField('Confirm Password', validators=[DataRequired()])
     submit = SubmitField("Submit")
     
     
@@ -63,13 +81,15 @@ def add_user():
         if user is None:
             user = Users(name = form.name.data, 
                         email = form.email.data, 
-                        favorite_color = form.favorite_color.data)
+                        favorite_color = form.favorite_color.data,
+                        password_hash = form.password_hash.data)
             db.session.add(user)
             db.session.commit()
         name = form.name.data
         form.name.data = ''
         form.email.data = ''
         form.favorite_color.data = ''
+        form.password_hash = ''
         flash("User Added Successfully!!")
     our_users = Users.query.order_by(Users.date_added)
     
@@ -91,20 +111,30 @@ def update(id):
         name_to_update.name = request.form['name']
         name_to_update.email = request.form['email']
         name_to_update.favorite_color = request.form['favorite_color']
-        try:
-            db.session.commit()
-            flash("User Updated Successfully!")
+        name_to_update.password_hash = request.form['password_hash']
+        name_to_update.password_hash2 = request.form['password_hash2']
+        if name_to_update.password_hash == name_to_update.password_hash2:
+        
+            try:
+                db.session.commit()
+                flash("User Updated Successfully!")
+                return render_template("add_user.html",
+                        form = form,
+                        name_to_update = name_to_update,
+                        id = id
+                        )
+            except:
+                flash("Error!!!")
+                return render_template("update.html",
+                        form = form,
+                        name_to_update = name_to_update
+                        )
+        else:
             return render_template("update.html",
-                    form = form,
-                    name_to_update = name_to_update,
+                form = form,
+                name_to_update = name_to_update,
                     id = id
-                    )
-        except:
-            flash("Error!!!")
-            return render_template("update.html",
-                    form = form,
-                    name_to_update = name_to_update
-                    )
+                )
     else:
         return render_template("update.html",
                 form = form,
